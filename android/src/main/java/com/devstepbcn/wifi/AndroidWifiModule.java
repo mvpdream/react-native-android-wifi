@@ -48,7 +48,8 @@ public class AndroidWifiModule extends ReactContextBaseJavaModule {
   	@ReactMethod
 	public void loadWifiList(Callback successCallback, Callback errorCallback) {
 		try {
-			List < ScanResult > results = wifi.getScanResults();
+			WifiManager mWifiManager = (WifiManager) getReactApplicationContext().getSystemService(Context.WIFI_SERVICE);
+			List < ScanResult > results = mWifiManager.getScanResults();
 			JSONArray wifiArray = new JSONArray();
 
 			for (ScanResult result: results) {
@@ -152,7 +153,7 @@ public class AndroidWifiModule extends ReactContextBaseJavaModule {
 		}
 		//Add configuration to Android wifi manager settings...
      	wifi.addNetwork(conf);
-
+		
 		//Enable it so that android can connect
 		List < WifiConfiguration > list = wifi.getConfiguredNetworks();
 		for (WifiConfiguration i: list) {
@@ -169,25 +170,32 @@ public class AndroidWifiModule extends ReactContextBaseJavaModule {
 	@ReactMethod
 	public void getSSID(final Callback callback) {
 	    WifiInfo info = wifi.getConnectionInfo();
-
+	    
 	    // This value should be wrapped in double quotes, so we need to unwrap it.
 	    String ssid = info.getSSID();
 	    if (ssid.startsWith("\"") && ssid.endsWith("\"")) {
 	      ssid = ssid.substring(1, ssid.length() - 1);
 	    }
-
+	    
 	    callback.invoke(ssid);
   	}
-
-    //This method will return the basic service set identifier (BSSID) of the current access point
-    @ReactMethod
-    public void getBSSID(final Callback callback) {
-        WifiInfo info = wifi.getConnectionInfo();
-
-        String bssid = info.getBSSID();
-
-        callback.invoke(bssid.toUpperCase());
-    }
+	// 得到WifiInfo的所有信息包
+	@ReactMethod
+	public void getMACInfo(final Callback callback) {
+		WifiInfo mWifiInfo = wifi.getConnectionInfo();
+		String wifiInfo="";
+		if(mWifiInfo != null){
+		wifiInfo=mWifiInfo.getMacAddress().toString();
+	}
+	callback.invoke(wifiInfo);
+	}
+	// 得到手机的名称
+	@ReactMethod
+	public void getPhoneName(final Callback callback) {
+		String phoneName="";
+		phoneName=android.os.Build.MANUFACTURER.toString();
+		callback.invoke(phoneName);
+	}
 
   	//This method will return current wifi signal strength
   	@ReactMethod
@@ -195,28 +203,4 @@ public class AndroidWifiModule extends ReactContextBaseJavaModule {
   		int linkSpeed = wifi.getConnectionInfo().getRssi();
 		callback.invoke(linkSpeed);
 	}
-	//This method will return current IP
-	@ReactMethod
-	public void getIP(final Callback callback) {
-	    WifiInfo info = wifi.getConnectionInfo();	    
-	    String stringip=longToIP(info.getIpAddress());
-	    callback.invoke(stringip);
-  	}
-
-  	public static String longToIP(int longIp){   
-		StringBuffer sb = new StringBuffer("");   
-		String[] strip=new String[4];
-		strip[3]=String.valueOf((longIp >>> 24));
-		strip[2]=String.valueOf((longIp & 0x00FFFFFF) >>> 16);
-		strip[1]=String.valueOf((longIp & 0x0000FFFF) >>> 8);
-		strip[0]=String.valueOf((longIp & 0x000000FF));
-		sb.append(strip[0]);   
-		sb.append(".");   
-		sb.append(strip[1]);   
-		sb.append(".");   
-		sb.append(strip[2]);   
-		sb.append(".");   
-		sb.append(strip[3]);   
-		return sb.toString();   
-	} 
 }
